@@ -5,12 +5,12 @@ export default async function handler(req, res) {
   if (!prompt) return res.status(400).json({ error: 'No prompt provided' });
 
   const HF_KEY = process.env.HF_API_KEY;
-  if (!HF_KEY) return res.status(500).json({ error: 'HF_API_KEY not set in Vercel environment variables' });
+  if (!HF_KEY) return res.status(500).json({ error: 'HF_API_KEY not set in Vercel' });
 
   const models = [
+    'black-forest-labs/FLUX.1-schnell',
     'stabilityai/stable-diffusion-xl-base-1.0',
-    'runwayml/stable-diffusion-v1-5',
-    'CompVis/stable-diffusion-v1-4'
+    'runwayml/stable-diffusion-v1-5'
   ];
 
   for (const model of models) {
@@ -34,10 +34,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ image: base64 });
       }
 
-      if (response.status === 503) {
-        // model warming up, try next one
-        continue;
-      }
+      if (response.status === 503) continue; // model loading, try next
 
       const errData = await response.json().catch(() => ({}));
       throw new Error(errData.error || `HTTP ${response.status}`);
@@ -46,9 +43,8 @@ export default async function handler(req, res) {
       if (model === models[models.length - 1]) {
         return res.status(500).json({ error: e.message || 'Generation failed' });
       }
-      // try next model
     }
   }
 
-  return res.status(500).json({ error: 'All models busy. Try again in a moment.' });
+  return res.status(500).json({ error: 'All models busy. Try again.' });
 }
