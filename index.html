@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShubaAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan:   #00ffe7;
+  --green:  #39ff14;
+  --red:    #ff003c;
+  --dim:    rgba(0,255,231,0.07);
+  --bg:     #020408;
+  --panel:  #060e14;
+  --border: rgba(0,255,231,0.15);
+  --text:   #d4fff9;
+  --muted:  #3f7068;
+  --glow-sm: 0 0 10px var(--cyan);
+  --glow-md: 0 0 26px rgba(0,255,231,0.45);
+  --glow-lg: 0 0 60px rgba(0,255,231,0.18);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;overflow:hidden;cursor:crosshair;font-size:16px;}
+
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:1000;}
+
+.corner{position:fixed;width:70px;height:70px;pointer-events:none;z-index:2;}
+.corner-tl{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.corner-tr{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+.corner-bl{bottom:0;left:0;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.corner-br{bottom:0;right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+
+#rain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.15;}
+
+@keyframes glitch{0%,94%,100%{opacity:1;transform:none;filter:none}95%{opacity:.8;transform:translateX(-3px);filter:hue-rotate(90deg)}96%{opacity:1;transform:translateX(3px)}97%{clip-path:inset(25% 0 45% 0);transform:translateX(-2px)}98%{clip-path:none;transform:none}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes caret{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes tpulse{0%,100%{transform:scale(.5);opacity:.3}50%{transform:scale(1.3);opacity:1}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(57,255,20,0.5)}100%{box-shadow:0 0 0 12px rgba(57,255,20,0)}}
+
+.app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;max-width:900px;margin:0 auto;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(0,255,231,0.05) 0%,transparent 100%);flex-shrink:0;position:relative;}
+header::before{content:'';position:absolute;bottom:-1px;left:0;width:60%;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);}
+.brand{display:flex;flex-direction:column;gap:4px;}
+.brand-name{font-family:'Orbitron',monospace;font-size:clamp(20px,3.5vw,30px);font-weight:900;letter-spacing:0.22em;color:var(--cyan);text-shadow:var(--glow-md);animation:glitch 8s infinite;line-height:1;}
+.brand-tag{font-size:10px;letter-spacing:0.22em;color:var(--muted);margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:14px;}
+.sys-time{font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:0.15em;color:var(--muted);}
+.status{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:0.18em;color:var(--muted);border:1px solid var(--border);padding:6px 14px;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 2s ease-in-out infinite;}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:24px 28px 16px;display:flex;flex-direction:column;gap:20px;scroll-behavior:smooth;}
+.messages::-webkit-scrollbar{width:3px}
+.messages::-webkit-scrollbar-track{background:transparent}
+.messages::-webkit-scrollbar-thumb{background:var(--muted);border-radius:4px}
+
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:22px;text-align:center;padding:24px;animation:fadeIn .5s ease both;}
+.welcome-ascii{font-size:clamp(11px,1.8vw,14px);color:var(--cyan);text-shadow:var(--glow-sm);line-height:1.5;opacity:.65;letter-spacing:.04em;}
+.welcome-title{font-family:'Orbitron',monospace;font-size:clamp(20px,4.5vw,36px);font-weight:900;letter-spacing:.2em;color:var(--cyan);text-shadow:var(--glow-lg);line-height:1.1;}
+
+.free-badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(57,255,20,0.35);background:rgba(57,255,20,0.05);padding:7px 18px;font-size:11px;letter-spacing:.2em;color:var(--green);clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);text-shadow:0 0 8px var(--green);}
+.free-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:ring 1.6s ease-out infinite;}
+
+.welcome-sub{font-size:13px;color:var(--muted);letter-spacing:.12em;max-width:440px;line-height:2;}
+.welcome-sub::after{content:'▌';color:var(--cyan);animation:caret 1s step-end infinite;}
+
+.suggestions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:620px;}
+.chip{font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:.07em;color:var(--muted);background:var(--dim);border:1px solid var(--border);padding:9px 16px;cursor:pointer;transition:all .15s ease;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
+.chip:hover{color:var(--cyan);border-color:var(--cyan);background:rgba(0,255,231,0.05);text-shadow:var(--glow-sm);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,255,231,0.08);}
+
+.msg-row{display:flex;flex-direction:column;gap:5px;animation:fadeIn .25s ease both;}
+.msg-row.user{align-items:flex-end}
+.msg-row.ai{align-items:flex-start}
+.msg-label{font-size:10px;letter-spacing:.25em;color:var(--muted);padding:0 6px;}
+.msg-row.user .msg-label{color:rgba(57,255,20,0.55)}
+
+.bubble{max-width:min(88%,680px);padding:14px 20px;font-size:15px;line-height:1.85;word-break:break-word;position:relative;}
+.msg-row.user .bubble{background:rgba(57,255,20,0.05);border:1px solid rgba(57,255,20,0.22);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));color:#b8ffb0;}
+.msg-row.ai .bubble{background:var(--dim);border:1px solid var(--border);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);color:var(--text);}
+.msg-row.ai .bubble::before{content:'';position:absolute;top:0;left:0;width:2px;height:50%;background:linear-gradient(to bottom,var(--cyan),transparent);box-shadow:var(--glow-sm);}
+
+.bubble p{margin:0 0 10px}.bubble p:last-child{margin:0}
+.bubble code{background:rgba(0,255,231,0.09);border:1px solid rgba(0,255,231,0.2);padding:2px 8px;color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:13.5px;}
+.bubble pre{background:rgba(0,0,0,0.6);border:1px solid var(--border);border-left:2px solid var(--cyan);padding:14px;overflow-x:auto;margin:12px 0;}
+.bubble pre code{background:none;border:none;padding:0;font-size:13px}
+.bubble strong{color:var(--cyan);text-shadow:var(--glow-sm)}
+.bubble em{color:var(--green);font-style:normal}
+.bubble ul,.bubble ol{padding-left:20px;margin:8px 0}
+.bubble li{margin:5px 0;font-size:15px}
+.bubble h1,.bubble h2,.bubble h3{font-family:'Orbitron',monospace;font-size:15px;color:var(--cyan);letter-spacing:.1em;margin:12px 0 7px;text-shadow:var(--glow-sm);}
+.bubble blockquote{border-left:2px solid var(--cyan);padding-left:12px;color:var(--muted);margin:8px 0;}
+
+.typing-bubble{display:flex;align-items:center;gap:9px;padding:16px 22px;background:var(--dim);border:1px solid var(--border);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);}
+.t-dot{width:8px;height:8px;background:var(--cyan);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);animation:tpulse 1.3s ease-in-out infinite;}
+.t-dot:nth-child(2){animation-delay:.22s;background:var(--green)}
+.t-dot:nth-child(3){animation-delay:.44s;background:var(--red)}
+
+.err-msg{align-self:center;background:rgba(255,0,60,0.07);border:1px solid rgba(255,0,60,0.3);padding:12px 20px;font-size:13px;color:#ff7090;letter-spacing:.05em;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);max-width:520px;text-align:center;}
+
+/* INPUT */
+.input-area{padding:14px 28px 22px;flex-shrink:0;border-top:1px solid var(--border);position:relative;}
+.input-area::before{content:'';position:absolute;top:-1px;left:0;width:45%;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);}
+.input-row{display:flex;align-items:flex-end;gap:12px;background:var(--panel);border:1px solid var(--border);padding:12px 16px;clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px);transition:border-color .2s,box-shadow .2s;}
+.input-row:focus-within{border-color:var(--cyan);box-shadow:var(--glow-md),inset 0 0 24px rgba(0,255,231,0.02);}
+.prompt-sign{font-size:17px;color:var(--cyan);text-shadow:var(--glow-sm);padding-bottom:3px;flex-shrink:0;user-select:none;}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:15px;resize:none;min-height:24px;max-height:130px;line-height:1.65;caret-color:var(--cyan);}
+textarea::placeholder{color:var(--muted);font-size:15px}
+.send-btn{width:40px;height:40px;background:none;border:1px solid var(--muted);color:var(--muted);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;clip-path:polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);transition:all .15s ease;flex-shrink:0;}
+.send-btn.active{border-color:var(--cyan);color:var(--cyan);text-shadow:var(--glow-sm);box-shadow:var(--glow-sm);}
+.send-btn.active:hover{background:rgba(0,255,231,0.08);box-shadow:var(--glow-md);}
+.input-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:0 2px;}
+.footer-info{font-size:11px;letter-spacing:.14em;color:var(--muted);}
+.clear-btn{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--muted);background:none;border:none;cursor:pointer;transition:color .15s;}
+.clear-btn:hover{color:var(--red);text-shadow:0 0 8px var(--red)}
+
+@media(max-width:600px){
+  header,.messages,.input-area{padding-left:16px;padding-right:16px}
+  .brand-name{font-size:20px}.sys-time{display:none}
+  .bubble{font-size:14px}textarea{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+<canvas id="rain"></canvas>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-name">ShubaAI</div>
+      <div class="brand-tag">NEURAL INTERFACE v1.0 // GROQ · LLAMA-3 POWERED</div>
+    </div>
+    <div class="header-right">
+      <div class="sys-time" id="sysTime">--:--:--</div>
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>ONLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <div class="welcome-ascii">
+╔══════════════════════════════════╗<br>
+║   ShubaAI  //  NEURAL CORE       ║<br>
+║   MODEL : LLAMA-3.3-70B          ║<br>
+║   STATUS : ALL SYSTEMS NOMINAL   ║<br>
+╚══════════════════════════════════╝
+      </div>
+      <div class="welcome-title">SYSTEM READY</div>
+      <div class="free-badge">
+        <div class="free-dot"></div>
+        FREE TO USE · NO SIGNUP NEEDED
+      </div>
+      <div class="welcome-sub">Ask me anything — I'm ready</div>
+      <div class="suggestions">
+        <div class="chip" onclick="useSuggestion(this)">▸ Explain how AI works</div>
+        <div class="chip" onclick="useSuggestion(this)">▸ Write a Python script</div>
+        <div class="chip" onclick="useSuggestion(this)">▸ Solve a math problem</div>
+        <div class="chip" onclick="useSuggestion(this)">▸ Help me write an email</div>
+        <div class="chip" onclick="useSuggestion(this)">▸ Tell me something mind-blowing</div>
+        <div class="chip" onclick="useSuggestion(this)">▸ Debug my code</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <span class="prompt-sign">&gt;_</span>
+      <textarea
+        id="input" rows="1"
+        placeholder="Ask ShubaAI anything..."
+        oninput="onType(this)"
+        onkeydown="onKey(event)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="send()">&#9658;</button>
+    </div>
+    <div class="input-footer">
+      <span class="footer-info">SHIFT+ENTER new line · ENTER send</span>
+      <button class="clear-btn" onclick="clearChat()">[ CLEAR ]</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Matrix Rain */
+(function(){
+  const c=document.getElementById('rain'),x=c.getContext('2d');
+  const chars='ShubaAI01ネコアイスタ<>[]{}|XZ10アBCDE';
+  let cols,drops;
+  function init(){c.width=window.innerWidth;c.height=window.innerHeight;cols=Math.floor(c.width/20);drops=Array(cols).fill(1);}
+  function draw(){x.fillStyle='rgba(2,4,8,0.05)';x.fillRect(0,0,c.width,c.height);x.fillStyle='rgba(0,255,231,0.55)';x.font='14px Share Tech Mono';drops.forEach((y,i)=>{const ch=chars[Math.floor(Math.random()*chars.length)];x.fillText(ch,i*20,y*20);if(y*20>c.height&&Math.random()>0.975)drops[i]=0;drops[i]++;});}
+  init();setInterval(draw,55);window.addEventListener('resize',init);
+})();
+
+/* Clock */
+(function(){
+  const el=document.getElementById('sysTime');
+  function tick(){const n=new Date();el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');}
+  tick();setInterval(tick,1000);
+})();
+
+/* State */
+let history=[],loading=false;
+const msgsEl=document.getElementById('messages');
+const inputEl=document.getElementById('input');
+const sendBtn=document.getElementById('sendBtn');
+const welcomeEl=document.getElementById('welcome');
+
+/* Input */
+function onType(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';sendBtn.classList.toggle('active',el.value.trim().length>0);}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!loading&&inputEl.value.trim())send();}}
+function useSuggestion(el){inputEl.value=el.textContent.replace(/^▸\s*/,'').trim();onType(inputEl);send();}
+
+/* Chat */
+function clearChat(){history=[];msgsEl.querySelectorAll('.msg-row,.err-msg').forEach(e=>e.remove());msgsEl.appendChild(welcomeEl);welcomeEl.style.display='';}
+
+function addMessage(role,html){
+  if(welcomeEl.parentNode)welcomeEl.remove();
+  const row=document.createElement('div');row.className=`msg-row ${role}`;
+  const lbl=document.createElement('div');lbl.className='msg-label';lbl.textContent=role==='user'?'[ YOU ]':'[ ShubaAI ]';
+  const bub=document.createElement('div');bub.className='bubble';bub.innerHTML=html;
+  row.appendChild(lbl);row.appendChild(bub);msgsEl.appendChild(row);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+function showTyping(){
+  if(welcomeEl.parentNode)welcomeEl.remove();
+  const row=document.createElement('div');row.className='msg-row ai';row.id='typing';
+  const lbl=document.createElement('div');lbl.className='msg-label';lbl.textContent='[ ShubaAI ]';
+  const bub=document.createElement('div');bub.className='typing-bubble';
+  bub.innerHTML='<div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>';
+  row.appendChild(lbl);row.appendChild(bub);msgsEl.appendChild(row);msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+function removeTyping(){const el=document.getElementById('typing');if(el)el.remove();}
+
+/* Markdown */
+function md(text){
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  text=text.replace(/```[\w]*\n?([\s\S]*?)```/g,(_,c)=>`<pre><code>${esc(c.trim())}</code></pre>`);
+  text=text.replace(/`([^`]+)`/g,(_,c)=>`<code>${esc(c)}</code>`);
+  text=text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  text=text.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  text=text.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  text=text.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  text=text.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  text=text.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+  text=text.replace(/^[\*\-] (.+)$/gm,'<li>$1</li>');
+  text=text.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  text=text.replace(/(<li>[\s\S]+?<\/li>)/g,'<ul>$1</ul>');
+  const lines=text.split('\n'),out=[];let buf=[];
+  for(const line of lines){
+    if(/^<(h[123]|ul|ol|pre|blockquote)/.test(line.trim())){if(buf.length){out.push('<p>'+buf.join('<br>')+'</p>');buf=[];}out.push(line);}
+    else if(line.trim()===''){if(buf.length){out.push('<p>'+buf.join('<br>')+'</p>');buf=[];}}
+    else{buf.push(line);}
+  }
+  if(buf.length)out.push('<p>'+buf.join('<br>')+'</p>');
+  return out.join('');
+}
+
+/* Send — calls YOUR backend, not Groq directly */
+async function send(){
+  const text=inputEl.value.trim();
+  if(!text||loading)return;
+  loading=true;
+  inputEl.value='';inputEl.style.height='auto';
+  sendBtn.classList.remove('active');
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  addMessage('user',esc(text));
+  history.push({role:'user',content:text});
+  showTyping();
+  try{
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:history})
+    });
+    const data=await res.json();
+    removeTyping();
+    if(data.error)throw new Error(data.error);
+    history.push({role:'assistant',content:data.reply});
+    addMessage('ai',md(data.reply));
+  }catch(err){
+    removeTyping();
+    const e=document.createElement('div');
+    e.className='err-msg';
+    e.textContent='⚠ ERROR: '+(err.message||'Connection failed.');
+    msgsEl.appendChild(e);msgsEl.scrollTop=msgsEl.scrollHeight;
+    history.pop();
+  }
+  loading=false;inputEl.focus();
+}
+</script>
+</body>
+</html>
